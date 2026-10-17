@@ -1,5 +1,5 @@
 /* Tina's Zoo Mahjong — offline service worker */
-var VERSION = 'zoo-v3';
+var VERSION = 'zoo-v4';
 var CORE = [
   './',
   './index.html',

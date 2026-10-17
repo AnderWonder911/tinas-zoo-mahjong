@@ -55,7 +55,7 @@ home-screen app updates without ever being deleted and re-added.
 | Free / blocked rule | `isFree()` |
 | Win screen | `win()` → `confetti(HEARTS)` → `window.ZooLove.show({time, best, again, menu})` |
 | Tile size & 3D offsets | `fitBoard()` (`OX`, `OY`, `AR`) |
-| Saved game | `saveGame()` / `restoreGame()`; **one slot per board**: `zoo.save.v1.<board>`, with `zoo.last.v1` pointing at the most recent. Other keys: `zoo.stats.v1`, `zoo.settings.v1`, `zoo.love.v1` |
+| Saved game | `saveGame()` / `restoreGame()`; **one slot per board and mode**: `zoo.save.v1.<board>.<classic\|chase>`, with `zoo.last.v1` holding `{level, mode}`. `migrateSave()` moves older layouts across. Other keys: `zoo.stats.v1`, `zoo.settings.v1`, `zoo.love.v1` |
 | Resuming | Tapping a board that is in progress (in the current mode) picks it up; the card says "▸ in progress". A fresh deal comes from pause → New board |
 | Self-update | bottom of the file: `controllerchange` → save game → `flagResume()` → reload; `takeResumeFlag()` restores the board after the refresh |
 

@@ -7,8 +7,9 @@
 
   var STORE = { save: 'zoo.save.v1', stats: 'zoo.stats.v1', settings: 'zoo.settings.v1', last: 'zoo.last.v1' };
 
-  /* every board keeps its own saved game, so starting Meadow never throws away Safari */
-  function saveKey(levelId) { return STORE.save + '.' + levelId; }
+  /* every board keeps its own saved game per mode, so starting Meadow never throws
+     away Safari and switching to Chase never throws away the Classic game */
+  function saveKey(levelId, mode) { return STORE.save + '.' + levelId + '.' + (mode === 'chase' ? 'chase' : 'classic'); }
 
   /* 48 clearly distinguishable animals; every board uses a random subset. */
   var ANIMALS = [
@@ -391,9 +392,8 @@
       } else if (st.best != null) {
         right = '<span class="star">⭐️</span>' + fmtTime(st.best);
       }
-      var open = loadSave(lv.id);
-      var inProgress = open && open.mode === settings.mode
-        ? open.removed.filter(function (r) { return !r; }).length : 0;
+      var open = loadSave(lv.id, settings.mode);
+      var inProgress = open ? open.removed.filter(function (r) { return !r; }).length : 0;
       b.innerHTML =
         '<span class="level-emoji">' + lv.emoji + '</span>' +
         '<span class="level-body">' +
@@ -404,8 +404,8 @@
         '</span>' +
         '<span class="level-best">' + right + '</span>';
       b.addEventListener('click', function () {
-        var open = loadSave(lv.id);
-        if (open && open.mode === settings.mode && restoreGame(open)) return;
+        var open = loadSave(lv.id, settings.mode);
+        if (open && restoreGame(open)) return;
         startGame(lv.id, settings.mode);
       });
       wrap.appendChild(b);
@@ -577,31 +577,43 @@
     return true;
   }
 
-  function loadSave(levelId) { return load(saveKey(levelId), null); }
-  function dropSave(levelId) {
-    drop(saveKey(levelId));
-    if (load(STORE.last, null) === levelId) drop(STORE.last);
+  function loadSave(levelId, mode) {
+    var saved = load(saveKey(levelId, mode), null);
+    return (saved && saved.removed && saved.removed.length) ? saved : null;
+  }
+  function dropSave(levelId, mode) {
+    drop(saveKey(levelId, mode));
+    var last = load(STORE.last, null);
+    if (last && last.level === levelId && last.mode === mode) drop(STORE.last);
   }
   function lastSave() {
-    var id = load(STORE.last, null);
-    var saved = id ? loadSave(id) : null;
-    return saved && saved.removed && saved.removed.length ? saved : null;
+    var last = load(STORE.last, null);
+    if (!last || !last.level) return null;
+    return loadSave(last.level, last.mode);
   }
 
-  /* older builds kept a single save under zoo.save.v1 */
+  /* older builds kept one save under zoo.save.v1, then one per board */
   function migrateSave() {
-    var old = load(STORE.save, null);
+    var old = load(STORE.save, null), i, lv, perBoard;
     if (old && old.level && old.faces) {
-      if (!loadSave(old.level)) store(saveKey(old.level), old);
-      store(STORE.last, old.level);
+      if (!loadSave(old.level, old.mode)) store(saveKey(old.level, old.mode), old);
+      store(STORE.last, { level: old.level, mode: old.mode === 'chase' ? 'chase' : 'classic' });
     }
     drop(STORE.save);
+    for (i = 0; i < LEVELS.length; i++) {
+      lv = LEVELS[i];
+      perBoard = load(STORE.save + '.' + lv.id, null);
+      if (perBoard && perBoard.faces) {
+        if (!loadSave(lv.id, perBoard.mode)) store(saveKey(lv.id, perBoard.mode), perBoard);
+        drop(STORE.save + '.' + lv.id);
+      }
+    }
   }
 
   function saveGame() {
     if (!state || state.won || state.lost) return;
-    store(STORE.last, state.level);
-    store(saveKey(state.level), {
+    store(STORE.last, { level: state.level, mode: state.mode });
+    store(saveKey(state.level, state.mode), {
       v: 2,
       level: state.level,
       mode: state.mode,
@@ -914,7 +926,7 @@
     var rescuable = !!planPairs(state.tiles);
     var canUndo = state.mode !== 'chase' && state.history.length > 0;
     if (!rescuable && !canUndo) {
-      dropSave(state.level);                              /* dead board: do not offer it again */
+      dropSave(state.level, state.mode);                  /* dead board: do not offer it again */
       if (state.mode === 'chase') {
         var cst = statFor(state.level, 'chase');
         cst.mostPairs = Math.max(cst.mostPairs || 0, state.moves);
@@ -958,7 +970,7 @@
   function win() {
     state.won = true;
     stopPlay();
-    dropSave(state.level);
+    dropSave(state.level, state.mode);
     $('#chase-bar').hidden = true;
     Sound.unlock(); Sound.win();
 
@@ -987,7 +999,7 @@
     if (!state || state.lost || state.won) return;
     state.lost = true;
     stopPlay();
-    dropSave(state.level);
+    dropSave(state.level, state.mode);
     $('#chase-fill').style.transform = 'scaleX(0)';
     Sound.nope();
 
@@ -1215,7 +1227,7 @@
   $('#btn-stats').addEventListener('click', statsSheet);
   $('#btn-continue').addEventListener('click', function () {
     var saved = lastSave();
-    if (!saved || !restoreGame(saved)) { if (saved) dropSave(saved.level); renderHome(); }
+    if (!saved || !restoreGame(saved)) { if (saved) dropSave(saved.level, saved.mode); renderHome(); }
   });
 
   document.querySelectorAll('#mode-pick .mode-btn').forEach(function (b) {

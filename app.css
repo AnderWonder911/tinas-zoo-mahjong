@@ -331,7 +331,6 @@ body{
   place-items:center;
   font-size:calc(var(--tw) * .62);
   line-height:1;
-  will-change:transform;
 }
 .tile.is-dealing{animation:dealIn .32s var(--ease) backwards}
 

@@ -7,7 +7,7 @@ window.ZooZoom = (function () {
   'use strict';
 
   var MIN = 1, MAX = 4;          /* multiples of fit-to-screen */
-  var TAP_SLOP = 11;             /* px of movement still counted as a tap */
+  var TAP_SLOP = 14;             /* px of movement still counted as a tap (zoomable boards) */
   var TAP_TIME = 1200;           /* ms a tap may last: a resting finger still counts */
   var DBL_TIME = 330;            /* ms between the two taps of a double tap */
 
@@ -210,7 +210,8 @@ window.ZooZoom = (function () {
     if (!p || !start) { start = null; return; }
     var dt = Date.now() - start.t;
     var far = Math.hypot(e.clientX - start.x, e.clientY - start.y) > TAP_SLOP;
-    var wasTap = !moved && !far && dt < TAP_TIME;
+    /* nothing to confuse a tap with when the board cannot pan or zoom: be generous */
+    var wasTap = enabled ? (!moved && !far && dt < TAP_TIME) : true;
     var el = start.el;
     start = null;
     if (!wasTap) return;
