@@ -1,11 +1,12 @@
 /* Tina's Zoo Mahjong — offline service worker */
-var VERSION = 'zoo-v2';
+var VERSION = 'zoo-v3';
 var CORE = [
   './',
   './index.html',
   './app.css',
   './app.js',
   './js/love.js',
+  './js/zoom.js',
   './manifest.webmanifest',
   './icons/icon-192.png',
   './icons/icon-512.png',

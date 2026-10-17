@@ -22,6 +22,16 @@ Four boards, each shaped to fit a phone screen in portrait:
 | Butterfly | 72 | 3 |
 | Tortoise | 108 | 4 |
 | Zoo Tower | 144 | 5 |
+| Safari | 504 | 5 — a lion's head, 126 different animals and plants |
+
+Safari is far bigger than a phone screen, so it zooms: pinch to get closer, drag
+to move around, double-tap to jump in and out, and **Fit** in the corner shows
+the whole board again. A hint pans to the pair it found.
+
+Each board can be played two ways: **Classic**, with no clock, or **Chase**,
+which gives you a few seconds to find each pair (8s on Meadow up to 15s on
+Safari). The countdown stops whenever there is no move to make — the board
+reshuffles for free — and a hint costs three seconds.
 
 Every deal is built backwards from a verified removal order, so **each board can
 always be solved**. If a board does get stuck, *Shuffle* re-deals the remaining
@@ -31,9 +41,12 @@ no shuffle can fix) the game says so and offers Undo instead.
 Clearing a board opens a love screen: a burning heart, a message from the
 rotation in `js/love.js`, heart confetti, and the time and best time underneath.
 
-Also in: hints, unlimited undo, a pause screen, best times per board, sound you
-can mute, and an auto-saved game that survives closing the app — including across
-an update, where the app refreshes itself and drops straight back into the board.
+Also in: hints, unlimited undo (Classic), a pause screen, a counter of how many
+pairs are currently available, a gentle nudge if a board sits untouched for 20
+seconds, settings (sound, dimming covered tiles, the nudge, bigger animals), a
+stats screen with records per board and mode, and an auto-saved game that
+survives closing the app — including across an update, where the app refreshes
+itself and drops straight back into the board.
 
 ## How it is built
 

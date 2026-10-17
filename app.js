@@ -5,14 +5,17 @@
 (function () {
   'use strict';
 
-  var STORE = { save: 'zoo.save.v1', stats: 'zoo.stats.v1', settings: 'zoo.settings.v1' };
+  var STORE = { save: 'zoo.save.v1', stats: 'zoo.stats.v1', settings: 'zoo.settings.v1', last: 'zoo.last.v1' };
+
+  /* every board keeps its own saved game, so starting Meadow never throws away Safari */
+  function saveKey(levelId) { return STORE.save + '.' + levelId; }
 
   /* 48 clearly distinguishable animals; every board uses a random subset. */
   var ANIMALS = [
     '🐶','🐱','🐭','🐹','🐰','🦊','🐻','🐼','🐨','🐯','🦁','🐮',
     '🐷','🐸','🐵','🐔','🐧','🐦','🐤','🦆','🦉','🦇','🐺','🐗',
     '🐴','🦄','🐝','🦋','🐌','🐞','🐢','🐍','🐙','🦀','🐠','🐬',
-    '🐳','🦈','🐘','🦒','🦓','🦔','🦥','🦦','🦜','🦩','🐇','🦝'
+    '🐳','🦈','🐘','🦒','🦓','🦔','🦥','🦦','🦜','🦩','🦝','🦨'
   ];
 
   /* ---------- layout helpers (coordinates are in half-tile units) ---------- */
@@ -21,6 +24,16 @@
     for (r = 0; r < h; r++) for (c = 0; c < w; c++) out.push({ x: (x0 + c) * 2, y: (y0 + r) * 2, z: z });
     return out;
   }
+  /* turn the ASCII layers above into tile positions */
+  function fromGrid(grid) {
+    var out = [], z, r, c;
+    for (z = 0; z < grid.length; z++)
+      for (r = 0; r < grid[z].length; r++)
+        for (c = 0; c < grid[z][r].length; c++)
+          if (grid[z][r].charAt(c) === '#') out.push({ x: c * 2, y: r * 2, z: z });
+    return out;
+  }
+
   function join() {
     var out = [], i;
     for (i = 0; i < arguments.length; i++) out = out.concat(arguments[i]);
@@ -78,9 +91,52 @@
         );
       }
     }
+    ,
+    {
+      id: 'safari', name: 'Safari', emoji: '🦁', tiles: 504,
+      blurb: 'The giant one · 504 tiles · pinch to zoom',
+      big: true,
+      pool: function () { return SAFARI_POOL; },
+      build: function () { return fromGrid(SAFARI_GRID); }
+    }
+  ];
+
+  /* SAFARI needs 126 distinct faces, so animals are topped up with nature.
+     Near-identical pairs are deliberately left out (no 🐕 with 🐶, no 🌟 with ⭐). */
+  var SAFARI_POOL = [
+    '🐶','🐱','🐭','🐹','🐰','🦊','🐻','🐼','🐨','🐯','🦁','🐮','🐷','🐸','🐵','🐔',
+    '🐧','🐦','🐤','🦆','🦉','🦇','🐺','🐗','🐴','🦄',
+    '🐘','🦒','🦓','🦔','🦥','🦜','🦩','🦝','🐿️','🦨','🦙','🦃','🦢','🦅',
+    '🦚','🐊','🐢','🐍','🦏','🐪','🦌','🐐','🦬','🦧','🦘','🐆','🦤','🦭',
+    '🐝','🦋','🐌','🐞','🐛','🕷️','🦂',
+    '🐙','🦀','🐠','🐬','🐳','🦈','🐡','🐚',
+    '🌵','🌲','🌳','🌴','🌱','🍀','🍂','🍁','🌾','🪵','🎍',
+    '🌸','🌻','🌹','🏵️','💐','🌷','🍄',
+    '🌍','🌙','⭐','✨','⚡','🔥','🌈','☀️','⛅','🌧️','❄️','⛄','💧','🌊','🌋','🏔️','🪨','☄️','🌪️',
+    '🥥','🍇','🍉','🍊','🍋','🍌','🍍','🥭','🍎','🍐','🍑','🍒','🍓','🥝','🍆',
+    '🥕','🌽','🌶️','🥦','🧅','🍠','🥜',
+    '🐾','🦴','🪶','🥚','🍯','🪴'
+  ];
+
+  /* SAFARI board: a lion head, 504 tiles over five layers (16 x 18 cells) */
+  var SAFARI_GRID = [
+      ['....#......#....', '..####....####..', '...##########...', '..############..', '.##############.', '################', '################', '################', '################', '################', '################', '.##############.', '.##############.', '..############..', '...##########...', '....########....', '.....######.....', '......####......'],
+      ['................', '................', '....#......#....', '....########....', '...##########...', '..############..', '.##############.', '.##############.', '.##############.', '.##############.', '..############..', '..############..', '...##########...', '....########....', '.....######.....', '......####......', '.......##.......', '................'],
+      ['................', '................', '................', '................', '.....######.....', '....########....', '...##########...', '..############..', '..############..', '...##########...', '...##########...', '....########....', '.....######.....', '......####......', '.......##.......', '................', '................', '................'],
+      ['................', '................', '................', '................', '................', '......####......', '.....######.....', '....########....', '....########....', '....########....', '.....######.....', '......####......', '.......##.......', '................', '................', '................', '................', '................'],
+      ['................', '................', '................', '................', '................', '................', '.......##.......', '......####......', '.....######.....', '......####......', '.......##.......', '................', '................', '................', '................', '................', '................', '................']
   ];
 
   var HEARTS = ['❤️', '💕', '💖'];
+
+  /* how long Chase gives you to find the next pair, per board */
+  var CHASE_SECONDS = {
+    meadow: 8,
+    butterfly: 9,
+    tortoise: 10,
+    tower: 12,
+    safari: 15
+  };
 
   /* js/love.js owns the love screen; the stub keeps the game playable if it is missing */
   var Love = window.ZooLove || { show: function () {}, hide: function () {} };
@@ -202,11 +258,27 @@
     return null;
   }
 
-  function facesForPairs(n) {
-    var chosen = shuffle(ANIMALS.slice()).slice(0, Math.ceil(n / 2));
+  function facesForPairs(n, pool) {
+    var src = (pool && pool.length) ? pool : ANIMALS;
+    var chosen = shuffle(src.slice()).slice(0, Math.ceil(n / 2));
     var faces = [], i;
-    for (i = 0; i < n; i++) faces.push(chosen[Math.floor(i / 2)]);
+    for (i = 0; i < n; i++) faces.push(chosen[Math.floor(i / 2) % chosen.length]);
     return shuffle(faces);
+  }
+
+  /* drop any emoji this phone cannot draw, so no two tiles end up as the same box */
+  function filterSupported(list, needed) {
+    try {
+      var ctx = document.createElement('canvas').getContext('2d');
+      if (!ctx || !ctx.measureText) return list;
+      ctx.font = '32px sans-serif';
+      var tofu = ctx.measureText('\uFFFF').width;
+      var out = list.filter(function (e) {
+        var w = ctx.measureText(e).width;
+        return w > 0 && Math.abs(w - tofu) > 0.5;
+      });
+      return out.length >= needed ? out : list;
+    } catch (e) { return list; }
   }
 
   function applyFaces(pairs, faces) {
@@ -215,10 +287,37 @@
 
   /* ---------- state ---------- */
   var state = null;
-  var settings = load(STORE.settings, { sound: true });
+  var saved_settings = load(STORE.settings, {});
+  var settings = {
+    sound: saved_settings.sound !== false,
+    dim: saved_settings.dim !== false,
+    idleHint: saved_settings.idleHint !== false,
+    bigTiles: !!saved_settings.bigTiles,
+    mode: saved_settings.mode === 'chase' ? 'chase' : 'classic'
+  };
   var stats = load(STORE.stats, {});
   var timer = null;
   var hintTimeout = null;
+  var idleTimer = null;
+  var IDLE_MS = 20000;            /* how long a quiet board waits before it nudges */
+  var chaseRaf = null;
+  var chaseInterval = null;
+
+  function saveSettings() { store(STORE.settings, settings); }
+
+  /* stats are {board: {classic:{played,wins,best}, chase:{played,wins,best,mostPairs}}};
+     older saves held a flat {wins,best} for classic only */
+  function statFor(levelId, mode) {
+    var s = stats[levelId];
+    if (!s) s = stats[levelId] = {};
+    if (s.wins != null && !s.classic) {
+      s.classic = { played: s.wins || 0, wins: s.wins || 0, best: s.best == null ? null : s.best };
+      delete s.wins; delete s.best;
+    }
+    if (!s.classic) s.classic = { played: 0, wins: 0, best: null };
+    if (!s.chase) s.chase = { played: 0, wins: 0, best: null, mostPairs: 0 };
+    return s[mode === 'chase' ? 'chase' : 'classic'];
+  }
 
   var board = $('#board');
   var boardWrap = $('#board-wrap');
@@ -283,28 +382,48 @@
     var wrap = $('#levels');
     wrap.innerHTML = '';
     LEVELS.forEach(function (lv) {
-      var st = stats[lv.id] || {};
+      var st = statFor(lv.id, settings.mode);
       var b = el('button', 'level');
+      var right = '';
+      if (settings.mode === 'chase') {
+        if (st.best != null) right = '<span class="star">🏆</span>' + fmtTime(st.best);
+        else if (st.mostPairs) right = '<span class="star">🐾</span>' + st.mostPairs + ' pairs';
+      } else if (st.best != null) {
+        right = '<span class="star">⭐️</span>' + fmtTime(st.best);
+      }
+      var open = loadSave(lv.id);
+      var inProgress = open && open.mode === settings.mode
+        ? open.removed.filter(function (r) { return !r; }).length : 0;
       b.innerHTML =
         '<span class="level-emoji">' + lv.emoji + '</span>' +
         '<span class="level-body">' +
           '<span class="level-name">' + lv.name + '</span>' +
-          '<span class="level-meta">' + lv.blurb + '</span>' +
+          '<span class="level-meta">' + (inProgress
+            ? '▸ in progress · ' + inProgress + ' tiles left'
+            : lv.blurb + (settings.mode === 'chase' ? ' · ' + CHASE_SECONDS[lv.id] + 's per pair' : '')) + '</span>' +
         '</span>' +
-        '<span class="level-best">' +
-          (st.best != null ? '<span class="star">⭐️</span>' + fmtTime(st.best) : '') +
-        '</span>';
-      b.addEventListener('click', function () { startGame(lv.id); });
+        '<span class="level-best">' + right + '</span>';
+      b.addEventListener('click', function () {
+        var open = loadSave(lv.id);
+        if (open && open.mode === settings.mode && restoreGame(open)) return;
+        startGame(lv.id, settings.mode);
+      });
       wrap.appendChild(b);
     });
 
-    var saved = load(STORE.save, null);
+    document.querySelectorAll('#mode-pick .mode-btn').forEach(function (b) {
+      b.classList.toggle('is-on', b.dataset.mode === settings.mode);
+    });
+
+    var saved = lastSave();
     var cont = $('#btn-continue');
-    if (saved && saved.level && saved.removed && saved.removed.length && levelById(saved.level)) {
+    if (saved && saved.level && levelById(saved.level)) {
       var lv = levelById(saved.level);
       var left = saved.removed.filter(function (r) { return !r; }).length;
       cont.hidden = false;
-      $('#continue-meta').textContent = (lv ? lv.name : '') + ' · ' + left + ' tiles left · ' + fmtTime(saved.elapsed);
+      $('#continue-meta').textContent = (lv ? lv.name : '') +
+        (saved.mode === 'chase' ? ' · Chase' : '') +
+        ' · ' + left + ' tiles left · ' + fmtTime(saved.elapsed);
     } else {
       cont.hidden = true;
     }
@@ -317,17 +436,18 @@
   }
 
   /* ---------- game lifecycle ---------- */
-  function startGame(levelId) {
-    var level = levelById(levelId);
-    if (!level) return;
-    Love.hide();
-    var tiles = buildTiles(level);
-    var pairs = planPairs(tiles);
-    if (!pairs) { toast('Could not deal that board, try again'); return; }
-    applyFaces(pairs, facesForPairs(pairs.length));
+  var poolCache = {};
+  function levelPool(level, tileCount) {
+    if (!level.pool) return null;
+    if (!poolCache[level.id]) poolCache[level.id] = filterSupported(level.pool(), Math.ceil(tileCount / 4));
+    return poolCache[level.id];
+  }
 
-    state = {
-      level: levelId,
+  function freshState(level, mode, tiles) {
+    return {
+      level: level.id,
+      mode: mode === 'chase' ? 'chase' : 'classic',
+      big: !!level.big,
       tiles: tiles,
       layers: tiles.reduce(function (m, t) { return Math.max(m, t.z + 1); }, 1),
       cols: tiles.reduce(function (m, t) { return Math.max(m, t.x / 2 + 1); }, 1),
@@ -337,14 +457,92 @@
       moves: 0,
       hints: 0,
       shuffles: 0,
+      moveCount: 0,
       elapsed: 0,
       since: Date.now(),
       running: true,
-      won: false
+      won: false,
+      lost: false,
+      chase: null
     };
+  }
+
+  function startChase() {
+    if (!state || state.mode !== 'chase') return;
+    var total = (CHASE_SECONDS[state.level] || 10) * 1000;
+    state.chase = { total: total, left: total, last: Date.now() };
+    $('#chase-bar').hidden = false;
+    paintChase();
+    stopChaseClock();
+    chaseRaf = requestAnimationFrame(chaseTick);
+    /* the interval is the clock that counts; the frame loop only keeps the bar smooth */
+    chaseInterval = setInterval(chaseStep, 250);
+  }
+
+  function stopChaseClock() {
+    cancelAnimationFrame(chaseRaf);
+    clearInterval(chaseInterval);
+    chaseInterval = null;
+  }
+
+  function chaseRunning() {
+    return state && state.mode === 'chase' && state.chase && !state.won && !state.lost &&
+      state.running && !sheetOpen() && !document.hidden && state.moveCount > 0;
+  }
+
+  /* safe to call as often as you like: time is always measured from the last call */
+  function chaseStep() {
+    if (!state || state.mode !== 'chase' || !state.chase || state.won || state.lost) return;
+    var now = Date.now();
+    var dt = now - state.chase.last;
+    state.chase.last = now;
+    if (chaseRunning()) state.chase.left -= dt;
+    paintChase();
+    if (state.chase.left <= 0) loseChase();
+  }
+
+  function chaseTick() {
+    chaseStep();
+    if (state && state.chase && !state.won && !state.lost) chaseRaf = requestAnimationFrame(chaseTick);
+  }
+
+  function paintChase() {
+    if (!state || !state.chase) return;
+    var pct = Math.max(0, Math.min(1, state.chase.left / state.chase.total));
+    var fill = $('#chase-fill');
+    fill.style.transform = 'scaleX(' + pct.toFixed(4) + ')';
+    fill.classList.toggle('is-danger', state.chase.left <= 3000);
+    $('#chase-bar').classList.toggle('is-paused', !chaseRunning() && !state.won && !state.lost);
+  }
+
+  function resetChaseClock() {
+    if (!state || !state.chase) return;
+    state.chase.left = state.chase.total;
+    state.chase.last = Date.now();
+    paintChase();
+  }
+
+  function startGame(levelId, mode) {
+    var level = levelById(levelId);
+    if (!level) return;
+    Love.hide();
+    closeSheet();
+    var tiles = buildTiles(level);
+    var pairs = planPairs(tiles);
+    if (!pairs) { toast('Could not deal that board, try again'); return; }
+    applyFaces(pairs, facesForPairs(pairs.length, levelPool(level, tiles.length)));
+
+    state = freshState(level, mode || settings.mode, tiles);
+    var st = statFor(level.id, state.mode);
+    st.played = (st.played || 0) + 1;
+    store(STORE.stats, stats);
+
     show('game');
+    $('#chase-bar').hidden = state.mode !== 'chase';   /* before the board is measured */
     renderBoard(true);
     startTimer();
+    if (state.mode === 'chase') startChase();
+    resetIdle();
     saveGame();
   }
 
@@ -354,39 +552,66 @@
     var tiles = buildTiles(level);
     if (tiles.length !== saved.faces.length) return false;
     tiles.forEach(function (t, i) { t.face = saved.faces[i]; t.removed = !!saved.removed[i]; });
-    state = {
-      level: saved.level,
-      tiles: tiles,
-      layers: tiles.reduce(function (m, t) { return Math.max(m, t.z + 1); }, 1),
-      cols: tiles.reduce(function (m, t) { return Math.max(m, t.x / 2 + 1); }, 1),
-      rows: tiles.reduce(function (m, t) { return Math.max(m, t.y / 2 + 1); }, 1),
-      selected: null,
-      history: saved.history || [],
-      moves: saved.moves || 0,
-      hints: saved.hints || 0,
-      shuffles: saved.shuffles || 0,
-      elapsed: saved.elapsed || 0,
-      since: Date.now(),
-      running: true,
-      won: false
-    };
+
+    Love.hide();
+    closeSheet();
+    state = freshState(level, saved.mode, tiles);
+    state.history = saved.history || [];
+    state.moves = saved.moves || 0;
+    state.hints = saved.hints || 0;
+    state.shuffles = saved.shuffles || 0;
+    state.elapsed = saved.elapsed || 0;
+
     show('game');
+    $('#chase-bar').hidden = state.mode !== 'chase';
     renderBoard(false);
     startTimer();
+    if (state.mode === 'chase') {
+      startChase();
+      if (saved.chaseLeft != null) {       /* pick the clock up where it was, never under 3s */
+        state.chase.left = Math.max(3000, Math.min(state.chase.total, saved.chaseLeft));
+        paintChase();
+      }
+    }
+    resetIdle();
     return true;
   }
 
+  function loadSave(levelId) { return load(saveKey(levelId), null); }
+  function dropSave(levelId) {
+    drop(saveKey(levelId));
+    if (load(STORE.last, null) === levelId) drop(STORE.last);
+  }
+  function lastSave() {
+    var id = load(STORE.last, null);
+    var saved = id ? loadSave(id) : null;
+    return saved && saved.removed && saved.removed.length ? saved : null;
+  }
+
+  /* older builds kept a single save under zoo.save.v1 */
+  function migrateSave() {
+    var old = load(STORE.save, null);
+    if (old && old.level && old.faces) {
+      if (!loadSave(old.level)) store(saveKey(old.level), old);
+      store(STORE.last, old.level);
+    }
+    drop(STORE.save);
+  }
+
   function saveGame() {
-    if (!state || state.won) return;
-    store(STORE.save, {
-      v: 1,
+    if (!state || state.won || state.lost) return;
+    store(STORE.last, state.level);
+    store(saveKey(state.level), {
+      v: 2,
       level: state.level,
+      mode: state.mode,
       faces: state.tiles.map(function (t) { return t.face; }),
       removed: state.tiles.map(function (t) { return t.removed ? 1 : 0; }),
       history: state.history,
       moves: state.moves,
       hints: state.hints,
       shuffles: state.shuffles,
+      chaseLeft: state.chase ? Math.round(state.chase.left) : null,
       elapsed: elapsedNow()
     });
   }
@@ -415,8 +640,11 @@
   }
 
   /* ---------- rendering ---------- */
+  var OX = 0.13, OY = 0.15, AR = 1.33;
+
   function renderBoard(animate) {
     board.innerHTML = '';
+    board.classList.toggle('board--big', !!state.big);
     var frag = document.createDocumentFragment();
     state.tiles.forEach(function (t) {
       var n = el('div', 'tile', '<span>' + t.face + '</span>');
@@ -426,33 +654,62 @@
       n.style.setProperty('--z', t.z);
       n.style.zIndex = t.z * 1000 + t.y * 10 + t.x;
       n.dataset.i = t.i;
-      if (animate) n.style.animationDelay = Math.min(0.5, t.z * 0.04 + (t.y / 2) * 0.012) + 's';
-      else n.style.animation = 'none';
+      if (animate && !state.big) {
+        n.classList.add('is-dealing');
+        n.style.animationDelay = Math.min(0.5, t.z * 0.04 + (t.y / 2) * 0.012) + 's';
+      }
       if (t.removed) n.style.visibility = 'hidden';
       t.el = n;
       frag.appendChild(n);
     });
     board.appendChild(frag);
-    fitBoard();
+    fitBoard(true);
     refresh();
   }
 
-  function fitBoard() {
+  /* tile geometry inside the board, in board pixels */
+  function tileBox(t) {
+    var tw = state.tw, th = tw * AR, lz = state.layers - 1 - t.z;
+    return { x: t.x * (tw / 2) + lz * tw * OX, y: t.y * (th / 2) + lz * tw * OY, w: tw, h: th };
+  }
+
+  function fitBoard(reset) {
     if (!state) return;
     var r = boardWrap.getBoundingClientRect();
-    var OX = 0.13, OY = 0.15, AR = 1.33;
     var L = state.layers - 1;
-    var wNeed = state.cols + L * OX + 0.14;
-    var hNeed = state.rows * AR + L * OY + 0.2;
-    var tw = Math.min(r.width / wNeed, r.height / hNeed);
-    tw = Math.max(26, Math.min(tw, 96));
+    var tw;
+
+    if (state.big) {
+      tw = 46;                       /* fixed natural size; the zoom transform does the fitting */
+    } else {
+      var wNeed = state.cols + L * OX + 0.14;
+      var hNeed = state.rows * AR + L * OY + 0.2;
+      tw = Math.min(r.width / wNeed, r.height / hNeed);
+      tw = Math.max(26, Math.min(tw, settings.bigTiles ? 120 : 96));
+    }
+
+    state.tw = tw;
     var th = tw * AR;
     board.style.setProperty('--tw', tw + 'px');
     board.style.setProperty('--th', th + 'px');
     board.style.setProperty('--ox', tw * OX + 'px');
     board.style.setProperty('--oy', tw * OY + 'px');
-    board.style.width = (state.cols * tw + L * tw * OX) + 'px';
-    board.style.height = (state.rows * th + L * tw * OY) + 'px';
+    var w = state.cols * tw + L * tw * OX;
+    var h = state.rows * th + L * tw * OY;
+    board.style.width = w + 'px';
+    board.style.height = h + 'px';
+
+    var fitScale = state.big ? Math.min((r.width - 6) / w, (r.height - 6) / h) : 1;
+    ZooZoom.setContent(w, h, fitScale, !!state.big);
+    if (reset) ZooZoom.reset(false);
+  }
+
+  /* how many pairs she could take right now (four free copies of a face = two pairs) */
+  function countMoves() {
+    var counts = {}, n = 0, k;
+    state.tiles.forEach(function (t) { if (isFree(t)) counts[t.face] = (counts[t.face] || 0) + 1; });
+    for (k in counts) n += Math.floor(counts[k] / 2);
+    return n;
   }
 
   function refresh() {
@@ -464,10 +721,12 @@
       t.el.classList.toggle('is-blocked', !free);
       t.el.classList.toggle('is-free', free);
     });
+    state.moveCount = countMoves();
     $('#stat-left').textContent = left;
     $('#stat-moves').textContent = state.moves;
+    $('#stat-pairs').textContent = state.moveCount;
     $('#stat-time').textContent = fmtTime(elapsedNow());
-    $('#btn-undo').disabled = state.history.length === 0;
+    $('#btn-undo').disabled = state.mode === 'chase' || state.history.length === 0;
     return left;
   }
 
@@ -485,10 +744,34 @@
     setTimeout(function () { t.el.classList.remove('is-wrong'); }, 400);
   }
 
+  /* a nudge after a long pause, classic mode only */
+  function resetIdle() {
+    clearTimeout(idleTimer);
+    if (!state || state.won || state.lost || state.mode === 'chase' || !settings.idleHint) return;
+    idleTimer = setTimeout(function () {
+      if (!state || state.won || state.lost || sheetOpen() || document.hidden) { resetIdle(); return; }
+      var hits = findMatch(true);
+      if (hits.length) {
+        clearIdle();
+        var m = hits[rnd(hits.length)];
+        m.forEach(function (t) { t.el.classList.add('is-idle'); });
+        setTimeout(function () { m.forEach(function (t) { t.el.classList.remove('is-idle'); }); }, 2800);
+      }
+      resetIdle();
+    }, IDLE_MS);
+  }
+
+  function clearIdle() {
+    clearTimeout(idleTimer);
+    if (state) state.tiles.forEach(function (t) { if (t.el) t.el.classList.remove('is-idle'); });
+  }
+
   function tapTile(t) {
-    if (!state || state.won || sheetOpen()) return;
+    if (!state || state.won || state.lost || sheetOpen()) return;
     Sound.unlock();
     clearHint();
+    clearIdle();
+    resetIdle();
 
     if (t.removed) return;
     if (!isFree(t)) { wrongWiggle(t); Sound.nope(); toast('That tile is covered'); return; }
@@ -513,7 +796,7 @@
     state.moves++;
     state.history.push([a.i, b.i]);
     [a, b].forEach(function (t) {
-      t.el.classList.remove('is-selected', 'is-hint');
+      t.el.classList.remove('is-selected', 'is-hint', 'is-idle');
       t.el.classList.add('is-gone');
       setTimeout(function () {
         if (t.removed) { t.el.style.visibility = 'hidden'; t.el.classList.remove('is-gone'); }
@@ -521,16 +804,26 @@
     });
     Sound.match();
     var left = refresh();
+    if (state.mode === 'chase') resetChaseClock();
     saveGame();
 
     if (left === 0) { win(); return; }
     setTimeout(function () {
-      if (state && !state.won && !findMatch()) offerShuffle();
+      if (!state || state.won || state.lost) return;
+      if (findMatch()) return;
+      if (state.mode === 'chase') {
+        paintChase();                       /* the clock is already paused: no moves */
+        if (doShuffle(true)) { toast('No moves — shuffled for free'); resetChaseClock(); }
+        else offerShuffle();
+      } else {
+        offerShuffle();
+      }
     }, 420);
   }
 
   function undo() {
-    if (!state || !state.history.length || state.won) return;
+    if (!state || !state.history.length || state.won || state.lost) return;
+    if (state.mode === 'chase') { toast('No undo in Chase'); return; }
     var pair = state.history.pop();
     [pair[0], pair[1]].forEach(function (i) {
       var t = state.tiles[i];
@@ -542,6 +835,7 @@
     select(null);
     refresh();
     saveGame();
+    resetIdle();
   }
 
   function findMatch(all) {
@@ -557,23 +851,39 @@
 
   function clearHint() {
     clearTimeout(hintTimeout);
-    state && state.tiles.forEach(function (t) { if (t.el) t.el.classList.remove('is-hint'); });
+    if (state) state.tiles.forEach(function (t) { if (t.el) t.el.classList.remove('is-hint'); });
+  }
+
+  /* bring a pair into view on the big board */
+  function focusPair(m) {
+    if (!state || !state.big || !ZooZoom.enabled()) return;
+    var a = tileBox(m[0]), b = tileBox(m[1]);
+    var x = Math.min(a.x, b.x), y = Math.min(a.y, b.y);
+    ZooZoom.focusRect({ x: x, y: y, w: Math.max(a.x + a.w, b.x + b.w) - x, h: Math.max(a.y + a.h, b.y + b.h) - y }, 2);
   }
 
   function hint() {
-    if (!state || state.won) return;
+    if (!state || state.won || state.lost) return;
     var hits = findMatch(true);
     if (!hits.length) { offerShuffle(); return; }
     var m = hits[rnd(hits.length)];
     clearHint();
+    clearIdle();
     state.hints++;
+    if (state.mode === 'chase' && state.chase) {
+      state.chase.left -= 3000;              /* a hint costs three seconds */
+      paintChase();
+      toast('Hint · −3s');
+    }
     m.forEach(function (t) { t.el.classList.add('is-hint'); });
+    focusPair(m);
     hintTimeout = setTimeout(clearHint, 3200);
     saveGame();
+    resetIdle();
   }
 
   function doShuffle(silent) {
-    if (!state || state.won) return false;
+    if (!state || state.won || state.lost) return false;
     var remaining = state.tiles.filter(function (t) { return !t.removed; });
     if (remaining.length < 2) return false;
     var pairs = planPairs(state.tiles);
@@ -591,8 +901,10 @@
     state.shuffles++;
     select(null);
     clearHint();
+    clearIdle();
     refresh();
     saveGame();
+    resetIdle();
     if (!silent) toast('Shuffled — and still solvable');
     return true;
   }
@@ -600,7 +912,15 @@
   function offerShuffle() {
     pauseClock();
     var rescuable = !!planPairs(state.tiles);
-    var canUndo = state.history.length > 0;
+    var canUndo = state.mode !== 'chase' && state.history.length > 0;
+    if (!rescuable && !canUndo) {
+      dropSave(state.level);                              /* dead board: do not offer it again */
+      if (state.mode === 'chase') {
+        var cst = statFor(state.level, 'chase');
+        cst.mostPairs = Math.max(cst.mostPairs || 0, state.moves);
+        store(STORE.stats, stats);
+      }
+    }
     var actions = '';
     if (rescuable) actions += '<button class="btn btn--primary" data-act="shuffle">Shuffle the rest</button>';
     if (canUndo) actions += '<button class="btn btn--' + (rescuable ? 'ghost' : 'primary') + '" data-act="undo">Take a move back</button>';
@@ -615,44 +935,90 @@
         : 'The last animals are stacked on top of each other, so no shuffle can open them up.' +
           (canUndo ? ' Take a move back and clear them in a different order.' : '')) + '</p>' +
       '<div class="actions">' + actions + '</div>',
-      function (s) {
-        var btn = s.querySelector('[data-act="shuffle"]');
+      function (sh) {
+        var btn = sh.querySelector('[data-act="shuffle"]');
         if (btn) btn.onclick = function () { closeSheet(); resumeClock(); doShuffle(true); };
-        btn = s.querySelector('[data-act="undo"]');
+        btn = sh.querySelector('[data-act="undo"]');
         if (btn) btn.onclick = function () { closeSheet(); resumeClock(); undo(); };
-        s.querySelector('[data-act="restart"]').onclick = function () { closeSheet(); startGame(state.level); };
-        s.querySelector('[data-act="menu"]').onclick = function () { closeSheet(); resumeClock(); toMenu(); };
+        sh.querySelector('[data-act="restart"]').onclick = function () { closeSheet(); startGame(state.level, state.mode); };
+        sh.querySelector('[data-act="menu"]').onclick = function () { closeSheet(); resumeClock(); toMenu(); };
       }
     );
   }
 
-  /* ---------- win ---------- */
-  function win() {
-    state.won = true;
+  /* ---------- end of game ---------- */
+  function stopPlay() {
     pauseClock();
     clearInterval(timer);
-    drop(STORE.save);
+    clearHint();
+    clearIdle();
+    stopChaseClock();
+  }
+
+  function win() {
+    state.won = true;
+    stopPlay();
+    dropSave(state.level);
+    $('#chase-bar').hidden = true;
     Sound.unlock(); Sound.win();
 
     var secs = Math.round(state.elapsed);
     var lv = levelById(state.level);
-    var st = stats[state.level] || { wins: 0, best: null };
+    var mode = state.mode;
+    var st = statFor(state.level, mode);
     st.wins = (st.wins || 0) + 1;
-    var isBest = st.best == null || secs < st.best;
-    if (isBest) st.best = secs;
-    stats[state.level] = st;
+    if (st.best == null || secs < st.best) st.best = secs;
+    if (mode === 'chase') st.mostPairs = Math.max(st.mostPairs || 0, state.moves);
     store(STORE.stats, stats);
 
     confetti(HEARTS);
     setTimeout(function () {
-      if (!state || !state.won) return;        /* player already left the board */
+      if (!state || !state.won) return;
       Love.show({
         time: fmtTime(secs),
         best: fmtTime(st.best),
-        again: function () { startGame(lv.id); },
+        again: function () { startGame(lv.id, mode); },
         menu: function () { toMenu(); }
       });
     }, 380);
+  }
+
+  function loseChase() {
+    if (!state || state.lost || state.won) return;
+    state.lost = true;
+    stopPlay();
+    dropSave(state.level);
+    $('#chase-fill').style.transform = 'scaleX(0)';
+    Sound.nope();
+
+    var lv = levelById(state.level);
+    var st = statFor(state.level, 'chase');
+    st.mostPairs = Math.max(st.mostPairs || 0, state.moves);
+    store(STORE.stats, stats);
+
+    var pairs = state.moves;
+    var tilesLeft = state.tiles.filter(function (t) { return !t.removed; }).length;
+    openSheet(
+      '<span class="big-emoji">🐼</span>' +
+      '<h2>So close!</h2>' +
+      '<p>The clock ran out on ' + lv.name + '. ' +
+        (pairs ? 'You cleared ' + pairs + ' pair' + (pairs === 1 ? '' : 's') + ' — ' + tilesLeft + ' tiles still waiting.' : 'Next one is yours.') + '</p>' +
+      '<div class="result-grid">' +
+        '<div><b>' + pairs + '</b><span>pairs</span></div>' +
+        '<div><b>' + (st.mostPairs || pairs) + '</b><span>best pairs</span></div>' +
+        '<div><b>' + (st.best != null ? fmtTime(st.best) : '—') + '</b><span>best win</span></div>' +
+      '</div>' +
+      '<div class="actions">' +
+        '<button class="btn btn--primary" data-act="again">Try again</button>' +
+        '<button class="btn btn--ghost" data-act="classic">Play it without the clock</button>' +
+        '<button class="btn btn--ghost" data-act="menu">Choose board</button>' +
+      '</div>',
+      function (sh) {
+        sh.querySelector('[data-act="again"]').onclick = function () { closeSheet(); startGame(lv.id, 'chase'); };
+        sh.querySelector('[data-act="classic"]').onclick = function () { closeSheet(); startGame(lv.id, 'classic'); };
+        sh.querySelector('[data-act="menu"]').onclick = function () { closeSheet(); toMenu(); };
+      }
+    );
   }
 
   function confetti(palette) {
@@ -676,7 +1042,10 @@
     Love.hide();
     saveGame();
     clearInterval(timer);
+    stopChaseClock();
     clearHint();
+    clearIdle();
+    $('#chase-bar').hidden = true;
     state = null;
     renderHome();
     show('home');
@@ -684,12 +1053,12 @@
 
   /* ---------- pause / how to play ---------- */
   function pauseMenu() {
-    if (!state || state.won) return;
+    if (!state || state.won || state.lost) return;
     pauseClock();
     openSheet(
       '<span class="big-emoji">⏸️</span>' +
       '<h2>Paused</h2>' +
-      '<p>' + levelById(state.level).name + ' · ' + fmtTime(elapsedNow()) + '</p>' +
+      '<p>' + levelById(state.level).name + (state.mode === 'chase' ? ' · Chase' : '') + ' · ' + fmtTime(elapsedNow()) + '</p>' +
       '<div class="actions">' +
         '<button class="btn btn--primary" data-act="resume">Resume</button>' +
         '<button class="btn btn--ghost" data-act="restart">New board</button>' +
@@ -697,10 +1066,78 @@
       '</div>',
       function (s) {
         s.querySelector('[data-act="resume"]').onclick = function () { closeSheet(); resumeClock(); };
-        s.querySelector('[data-act="restart"]').onclick = function () { closeSheet(); startGame(state.level); };
+        s.querySelector('[data-act="restart"]').onclick = function () { closeSheet(); startGame(state.level, state.mode); };
         s.querySelector('[data-act="menu"]').onclick = function () { closeSheet(); resumeClock(); toMenu(); };
       }
     );
+  }
+
+  /* ---------- settings & stats ---------- */
+  function toggleRow(key, label, note) {
+    return '<label class="srow"><span class="srow-txt"><b>' + label + '</b>' +
+      (note ? '<i>' + note + '</i>' : '') + '</span>' +
+      '<input type="checkbox" class="sw" data-set="' + key + '"' + (settings[key] ? ' checked' : '') + '></label>';
+  }
+
+  function settingsSheet() {
+    openSheet(
+      '<span class="big-emoji">⚙️</span>' +
+      '<h2>Settings</h2>' +
+      '<div class="srows">' +
+        toggleRow('sound', 'Sound', 'taps, matches and the winning tune') +
+        toggleRow('dim', 'Dim covered tiles', 'free tiles stand out') +
+        toggleRow('idleHint', 'Idle nudge', 'pulses a pair after 20 seconds') +
+        toggleRow('bigTiles', 'Bigger animals', 'larger emoji on every tile') +
+      '</div>' +
+      '<div class="actions"><button class="btn btn--primary" data-act="ok">Done</button></div>',
+      function (sh) {
+        sh.querySelectorAll('.sw').forEach(function (box) {
+          box.addEventListener('change', function () {
+            settings[box.dataset.set] = box.checked;
+            saveSettings();
+            applySettings();
+          });
+        });
+        sh.querySelector('[data-act="ok"]').onclick = closeSheet;
+      }
+    );
+  }
+
+  function statsSheet() {
+    var rows = LEVELS.map(function (lv) {
+      var c = statFor(lv.id, 'classic'), ch = statFor(lv.id, 'chase');
+      return '<tr><th>' + lv.emoji + ' ' + lv.name + '</th>' +
+        '<td>' + (c.wins || 0) + '/' + (c.played || 0) + '<i>' + (c.best != null ? fmtTime(c.best) : '—') + '</i></td>' +
+        '<td>' + (ch.wins || 0) + '/' + (ch.played || 0) + '<i>' +
+          (ch.best != null ? fmtTime(ch.best) : (ch.mostPairs ? ch.mostPairs + ' pairs' : '—')) + '</i></td></tr>';
+    }).join('');
+    var tot = LEVELS.reduce(function (a, lv) {
+      var c = statFor(lv.id, 'classic'), ch = statFor(lv.id, 'chase');
+      a.played += (c.played || 0) + (ch.played || 0);
+      a.wins += (c.wins || 0) + (ch.wins || 0);
+      return a;
+    }, { played: 0, wins: 0 });
+
+    openSheet(
+      '<span class="big-emoji">📊</span>' +
+      '<h2>Stats</h2>' +
+      '<div class="result-grid">' +
+        '<div><b>' + tot.played + '</b><span>played</span></div>' +
+        '<div><b>' + tot.wins + '</b><span>won</span></div>' +
+      '</div>' +
+      '<table class="stats-table"><thead><tr><th></th><th>Classic</th><th>Chase</th></tr></thead><tbody>' +
+        rows + '</tbody></table>' +
+      '<p class="stats-note">won / played, with the best time underneath</p>' +
+      '<div class="actions"><button class="btn btn--primary" data-act="ok">Close</button></div>',
+      function (sh) { sh.querySelector('[data-act="ok"]').onclick = closeSheet; }
+    );
+  }
+
+  function applySettings() {
+    document.body.classList.toggle('no-dim', !settings.dim);
+    document.body.classList.toggle('big-tiles', !!settings.bigTiles);
+    paintSound();
+    if (state) { fitBoard(false); if (!settings.idleHint) clearIdle(); resetIdle(); }
   }
 
   function howTo() {
@@ -712,6 +1149,8 @@
         '<li><span class="n">2</span><span>A tile can only be picked when <b>nothing sits on top of it</b> and its <b>left or right side is open</b>. Dimmed tiles are stuck.</span></li>' +
         '<li><span class="n">3</span><span>Clear every tile to win. <b>Hint</b> finds a pair, <b>Shuffle</b> rescues a stuck board, <b>Undo</b> takes a move back.</span></li>' +
         '<li><span class="n">4</span><span>Every board is dealt so that it <b>can always be solved</b>.</span></li>' +
+        '<li><span class="n">5</span><span>On <b>Safari</b> (504 tiles) <b>pinch to zoom</b>, drag to move around, and double-tap to zoom in and out. <b>Fit</b> in the corner shows the whole board again.</span></li>' +
+        '<li><span class="n">6</span><span><b>Chase</b> gives you a few seconds to find each pair. The clock stops whenever there is no move, and a hint costs 3 seconds.</span></li>' +
       '</ol>' +
       '<div class="actions"><button class="btn btn--primary" data-act="ok">Got it</button></div>',
       function (s) { s.querySelector('[data-act="ok"]').onclick = closeSheet; }
@@ -737,13 +1176,29 @@
   }
 
   /* ---------- wiring ---------- */
-  board.addEventListener('pointerdown', function (e) {
-    var node = e.target.closest ? e.target.closest('.tile') : null;
-    if (!node) return;
-    e.preventDefault();
-    var t = state && state.tiles[+node.dataset.i];
-    if (t) tapTile(t);
+
+  /* every tap on the board comes through the gesture controller, so a tap is
+     never confused with a pan or a pinch */
+  ZooZoom.attach({
+    viewport: boardWrap,
+    content: board,
+    onTap: function (x, y) {
+      if (!state) return;
+      var hit = document.elementFromPoint(x, y);
+      var node = hit && hit.closest ? hit.closest('.tile') : null;
+      if (!node) return;
+      var t = state.tiles[+node.dataset.i];
+      if (t) tapTile(t);
+    },
+    onDoubleTap: function (x, y) {
+      if (!state || !state.big) return;
+      select(null);                 /* the first of the two taps had selected a tile */
+      if (ZooZoom.isZoomed()) ZooZoom.reset(true);
+      else ZooZoom.zoomTo(2.6, x, y, true);
+    }
   });
+
+  $('#btn-zoom-out').addEventListener('click', function () { ZooZoom.reset(true); });
 
   $('#btn-back').addEventListener('click', toMenu);
   $('#btn-pause').addEventListener('click', pauseMenu);
@@ -751,13 +1206,24 @@
   $('#btn-hint').addEventListener('click', function () { Sound.unlock(); hint(); });
   $('#btn-shuffle').addEventListener('click', function () {
     Sound.unlock();
-    if (state && !state.won && !doShuffle()) offerShuffle();
+    if (!state || state.won || state.lost) return;
+    if (!doShuffle()) offerShuffle();      /* a shuffle you asked for never refills the Chase clock */
   });
   $('#btn-how').addEventListener('click', howTo);
   $('#btn-install').addEventListener('click', installHelp);
+  $('#btn-settings').addEventListener('click', settingsSheet);
+  $('#btn-stats').addEventListener('click', statsSheet);
   $('#btn-continue').addEventListener('click', function () {
-    var saved = load(STORE.save, null);
-    if (!saved || !restoreGame(saved)) { drop(STORE.save); renderHome(); }
+    var saved = lastSave();
+    if (!saved || !restoreGame(saved)) { if (saved) dropSave(saved.level); renderHome(); }
+  });
+
+  document.querySelectorAll('#mode-pick .mode-btn').forEach(function (b) {
+    b.addEventListener('click', function () {
+      settings.mode = b.dataset.mode === 'chase' ? 'chase' : 'classic';
+      saveSettings();
+      renderHome();
+    });
   });
 
   var soundBtn = $('#btn-sound');
@@ -767,20 +1233,24 @@
   }
   soundBtn.addEventListener('click', function () {
     settings.sound = !settings.sound;
-    store(STORE.settings, settings);
+    saveSettings();
     paintSound();
     if (settings.sound) { Sound.unlock(); Sound.tap(); }
   });
 
-  $('#overlay').addEventListener('click', function (e) { if (e.target === $('#overlay')) { /* keep modal */ } });
-
-  window.addEventListener('resize', fitBoard);
-  window.addEventListener('orientationchange', function () { setTimeout(fitBoard, 260); });
-  if (window.visualViewport) window.visualViewport.addEventListener('resize', fitBoard);
+  window.addEventListener('resize', function () { fitBoard(true); });
+  window.addEventListener('orientationchange', function () { setTimeout(function () { fitBoard(true); }, 260); });
+  if (window.visualViewport) window.visualViewport.addEventListener('resize', function () { fitBoard(false); });
 
   document.addEventListener('visibilitychange', function () {
-    if (document.hidden) { pauseClock(); saveGame(); }
-    else if (state && !state.won && !sheetOpen()) resumeClock();
+    if (document.hidden) {
+      pauseClock(); saveGame(); clearIdle();
+      if (state && state.chase) paintChase();          /* the countdown holds while away */
+    } else if (state && !state.won && !state.lost && !sheetOpen()) {
+      resumeClock();
+      if (state.chase) { state.chase.last = Date.now(); paintChase(); }
+      resetIdle();
+    }
   });
 
   /* stop iOS rubber-banding / double-tap zoom outside the board */
@@ -799,6 +1269,13 @@
       start: startGame,
       levels: LEVELS,
       love: Love,
+      zoom: window.ZooZoom,
+      settings: settings,
+      stats: function () { return stats; },
+      chase: function () { return state && state.chase; },
+      starve: function () { if (state && state.chase) { state.chase.left = 120; paintChase(); } },
+      tileAt: function (i) { return state && state.tiles[i]; },
+      setIdleMs: function (v) { IDLE_MS = v; resetIdle(); },
       forceWin: function () {
         if (!state || state.won) return false;
         state.tiles.forEach(function (t) {
@@ -817,13 +1294,14 @@
   }
 
   /* ---------- boot ---------- */
-  paintSound();
+  migrateSave();
+  applySettings();
   renderHome();
   show('home');
 
   /* came back from an update reload: drop straight back into the board */
   if (takeResumeFlag()) {
-    var resumeSave = load(STORE.save, null);
+    var resumeSave = lastSave();
     if (resumeSave) restoreGame(resumeSave);
   }
 
@@ -859,9 +1337,9 @@
       navigator.serviceWorker.addEventListener('controllerchange', function () {
         if (!hadController || window.__reloading) return;
         window.__reloading = true;
-        if (state && !state.won) {              /* a board was open: bring it back */
+        if (state && !state.won && !state.lost) {   /* a board was open: bring it back */
           saveGame();
-          if (load(STORE.save, null)) flagResume();
+          if (lastSave()) flagResume();
         }
         location.reload();
       });

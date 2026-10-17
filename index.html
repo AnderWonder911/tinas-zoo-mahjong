@@ -35,6 +35,11 @@
   <!-- ===== Home ===== -->
   <section class="screen screen--home is-active" id="screen-home">
     <div class="home-scroll">
+      <div class="home-top">
+        <button class="icon-btn icon-btn--sm" id="btn-settings" aria-label="Settings">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 13.5a7.7 7.7 0 0 0 0-3l1.7-1.3-1.8-3.1-2 .8a7.6 7.6 0 0 0-2.6-1.5L14.4 3h-3.6l-.3 2.4a7.6 7.6 0 0 0-2.6 1.5l-2-.8L4 9.2l1.7 1.3a7.7 7.7 0 0 0 0 3L4 14.8l1.8 3.1 2-.8a7.6 7.6 0 0 0 2.6 1.5l.3 2.4h3.6l.3-2.4a7.6 7.6 0 0 0 2.6-1.5l2 .8 1.8-3.1z"/></svg>
+        </button>
+      </div>
       <header class="home-head">
         <div class="home-mark" aria-hidden="true">
           <span>🐼</span><span>🦊</span><span>🐸</span>
@@ -48,11 +53,24 @@
         <span class="btn-meta" id="continue-meta"></span>
       </button>
 
+      <div class="mode-pick" id="mode-pick" role="group" aria-label="Game mode">
+        <button class="mode-btn is-on" data-mode="classic">
+          <span class="mode-name">Classic</span>
+          <span class="mode-sub">take your time</span>
+        </button>
+        <button class="mode-btn" data-mode="chase">
+          <span class="mode-name">Chase ⏱</span>
+          <span class="mode-sub">beat the clock</span>
+        </button>
+      </div>
+
       <h2 class="section-title">Choose a board</h2>
       <div class="levels" id="levels"></div>
 
       <div class="home-foot">
         <button class="linklike" id="btn-how">How to play</button>
+        <span class="dot">·</span>
+        <button class="linklike" id="btn-stats">Stats</button>
         <span class="dot">·</span>
         <button class="linklike" id="btn-install">Add to Home Screen</button>
       </div>
@@ -69,15 +87,24 @@
         <div class="stat"><span class="stat-val" id="stat-time">0:00</span><span class="stat-key">time</span></div>
         <div class="stat"><span class="stat-val" id="stat-left">0</span><span class="stat-key">tiles</span></div>
         <div class="stat"><span class="stat-val" id="stat-moves">0</span><span class="stat-key">moves</span></div>
+        <div class="stat"><span class="stat-val" id="stat-pairs">0</span><span class="stat-key">pairs</span></div>
       </div>
       <button class="icon-btn" id="btn-pause" aria-label="Pause">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5v14M15 5v14"/></svg>
       </button>
     </header>
 
+    <div class="chase-bar" id="chase-bar" hidden>
+      <div class="chase-fill" id="chase-fill"></div>
+    </div>
+
     <div class="board-wrap" id="board-wrap">
       <div class="board" id="board"></div>
       <p class="rotate-hint">↻ Turn your phone upright for bigger tiles</p>
+      <button class="zoom-out" id="btn-zoom-out">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3H5a2 2 0 0 0-2 2v4M15 3h4a2 2 0 0 1 2 2v4M9 21H5a2 2 0 0 1-2-2v-4M15 21h4a2 2 0 0 0 2-2v-4"/></svg>
+        <span>Fit</span>
+      </button>
     </div>
 
     <footer class="toolbar">
@@ -126,6 +153,7 @@
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 </div>
 <script src="./js/love.js"></script>
+<script src="./js/zoom.js"></script>
 <script src="./app.js"></script>
 </body>
 </html>
