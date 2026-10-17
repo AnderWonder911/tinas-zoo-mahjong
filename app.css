@@ -469,6 +469,145 @@ body{
   display:grid;place-items:center;font-weight:800;font-size:14px;
 }
 
+/* ====================== Love screen ====================== */
+
+.love{
+  position:absolute;
+  inset:0;
+  z-index:10500;
+  display:flex;
+  flex-direction:column;
+  padding:calc(var(--safe-t) + 18px) calc(var(--safe-r) + 22px) calc(var(--safe-b) + 18px) calc(var(--safe-l) + 22px);
+  background:
+    radial-gradient(90% 55% at 50% 38%, rgba(214,62,70,.5) 0%, rgba(120,20,40,.55) 45%, transparent 75%),
+    linear-gradient(170deg, #2a0d18 0%, #16060f 55%, #0a0309 100%);
+  overflow:hidden;
+  text-align:center;
+}
+
+.love-glow{
+  position:absolute;
+  left:50%;
+  top:36%;
+  width:min(104vw,560px);
+  height:min(104vw,560px);
+  transform:translate(-50%,-50%);
+  pointer-events:none;
+  background:radial-gradient(circle, rgba(255,138,76,.36) 0%, rgba(226,54,64,.2) 38%, transparent 68%);
+  animation:loveGlow 3.6s ease-in-out infinite;
+}
+@keyframes loveGlow{
+  0%,100%{opacity:.75;transform:translate(-50%,-50%) scale(1)}
+  50%{opacity:1;transform:translate(-50%,-50%) scale(1.08)}
+}
+
+.love-body{
+  position:relative;
+  flex:1;
+  min-height:0;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:clamp(14px,3.4vh,30px);
+}
+
+.love-heart{
+  font-size:min(33vw,19vh,170px);
+  line-height:1;
+  filter:drop-shadow(0 0 18px rgba(255,120,60,.75)) drop-shadow(0 0 44px rgba(226,46,62,.55));
+  animation:loveBeat 2.4s ease-in-out infinite, loveFlicker 2.1s ease-in-out infinite;
+  transform-origin:center 58%;
+}
+@keyframes loveBeat{
+  0%,100%{transform:scale(1)}
+  14%{transform:scale(1.09)}
+  28%{transform:scale(1.01)}
+  42%{transform:scale(1.06)}
+}
+@keyframes loveFlicker{
+  0%,100%{filter:drop-shadow(0 0 16px rgba(255,124,62,.7)) drop-shadow(0 0 40px rgba(226,46,62,.5))}
+  37%{filter:drop-shadow(0 0 26px rgba(255,164,78,.92)) drop-shadow(0 0 62px rgba(236,62,72,.62))}
+  63%{filter:drop-shadow(0 0 19px rgba(255,138,70,.78)) drop-shadow(0 0 48px rgba(226,46,62,.55))}
+}
+
+.love-message{
+  position:relative;
+  margin:0;
+  max-width:16em;
+  font-family:ui-serif,"New York",Georgia,"Times New Roman",serif;
+  font-size:clamp(25px,7.6vw,40px);
+  line-height:1.22;
+  font-weight:500;
+  letter-spacing:.005em;
+  color:#fff2e4;
+  text-shadow:0 2px 20px rgba(255,120,70,.45), 0 1px 2px rgba(0,0,0,.4);
+}
+
+.love-foot{
+  position:relative;
+  flex:0 0 auto;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:12px;
+  width:100%;
+  max-width:420px;
+  margin:0 auto;
+}
+
+.love-stats{
+  margin:0;
+  font-size:13px;
+  font-variant-numeric:tabular-nums;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+  color:rgba(255,226,214,.5);
+}
+
+.love-actions{display:flex;flex-direction:column;gap:10px;width:100%}
+
+.btn--love{
+  background:linear-gradient(180deg,#ff9d7a,#e8475a 62%,#c32b45);
+  color:#fff7f2;
+  box-shadow:0 5px 0 #8e1b30, 0 12px 26px rgba(0,0,0,.45);
+}
+.btn--quiet{
+  background:rgba(255,255,255,.1);
+  color:#ffeae2;
+  box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.2);
+}
+
+/* entrance moves things, it never fades them in: if the animation is paused or
+   stripped out (reduced motion, a backgrounded tab), everything stays visible */
+.love.is-in .love-heart{animation:loveIn .72s var(--ease), loveBeat 2.4s ease-in-out .72s infinite, loveFlicker 2.1s ease-in-out .72s infinite}
+.love.is-in .love-message{animation:loveUp .66s var(--ease) .2s both}
+.love.is-in .love-foot{animation:loveUp .6s var(--ease) .38s both}
+@keyframes loveIn{
+  0%{transform:scale(.45)}
+  70%{transform:scale(1.1)}
+  100%{transform:scale(1)}
+}
+@keyframes loveUp{
+  from{transform:translateY(18px)}
+  to{transform:none}
+}
+
+/* short screens (iPhone SE, landscape): keep everything on one page */
+@media (max-height:680px){
+  .love-message{font-size:clamp(22px,6.4vw,30px)}
+  .love-body{gap:clamp(10px,2.4vh,20px)}
+}
+@media (orientation:landscape) and (max-height:500px){
+  .love{flex-direction:row;align-items:center;gap:18px;text-align:left}
+  .love-body{flex-direction:row;gap:18px;justify-content:center}
+  .love-heart{font-size:min(26vh,120px)}
+  .love-message{font-size:clamp(20px,3.4vw,30px);max-width:12em}
+  .love-foot{max-width:230px}
+  .love-actions{gap:8px}
+  .love .btn{min-height:46px;padding:12px 16px;font-size:15px}
+}
+
 /* ====================== Confetti & toast ====================== */
 
 .confetti{position:absolute;inset:0;pointer-events:none;overflow:hidden;z-index:11000}
@@ -503,6 +642,24 @@ body{
   text-align:center;
 }
 .toast.is-on{opacity:1;transform:translate(-50%,0)}
+
+#love:not([hidden]) ~ .dev-win{display:none}
+
+.dev-win{
+  position:absolute;
+  left:calc(var(--safe-l) + 8px);
+  bottom:calc(var(--safe-b) + 70px);
+  z-index:12000;
+  border:0;
+  border-radius:10px;
+  padding:7px 11px;
+  font:700 11px/1 -apple-system,system-ui,sans-serif;
+  letter-spacing:.1em;
+  text-transform:uppercase;
+  background:rgba(255,255,255,.14);
+  color:var(--cream);
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.2);
+}
 
 /* ====================== Landscape & large screens ====================== */
 

@@ -1,10 +1,11 @@
 /* Tina's Zoo Mahjong — offline service worker */
-var VERSION = 'zoo-v1';
+var VERSION = 'zoo-v2';
 var CORE = [
   './',
   './index.html',
   './app.css',
   './app.js',
+  './js/love.js',
   './manifest.webmanifest',
   './icons/icon-192.png',
   './icons/icon-512.png',
@@ -14,10 +15,18 @@ var CORE = [
 
 self.addEventListener('install', function (e) {
   e.waitUntil(
-    caches.open(VERSION).then(function (c) { return c.addAll(CORE); }).then(function () {
+    caches.open(VERSION).then(function (c) {
+      /* {cache:'reload'} so a fresh deploy is never precached from the HTTP cache */
+      return c.addAll(CORE.map(function (u) { return new Request(u, { cache: 'reload' }); }));
+    }).then(function () {
       return self.skipWaiting();
     })
   );
+});
+
+/* the page asks a freshly installed worker to take over right away */
+self.addEventListener('message', function (e) {
+  if (e.data && e.data.type === 'SKIP_WAITING') self.skipWaiting();
 });
 
 self.addEventListener('activate', function (e) {
@@ -38,8 +47,10 @@ self.addEventListener('fetch', function (e) {
   if (req.mode === 'navigate') {
     e.respondWith(
       fetch(req).then(function (res) {
-        var copy = res.clone();
-        caches.open(VERSION).then(function (c) { c.put('./index.html', copy); });
+        if (res && res.ok) {                 /* never cache a 404/503 over the offline page */
+          var copy = res.clone();
+          caches.open(VERSION).then(function (c) { c.put('./index.html', copy); });
+        }
         return res;
       }).catch(function () {
         return caches.match('./index.html').then(function (r) { return r || caches.match('./'); });

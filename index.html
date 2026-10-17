@@ -106,9 +106,26 @@
     <div class="sheet" id="sheet" role="dialog" aria-modal="true"></div>
   </div>
 
+  <!-- ===== Love screen (shown when a board is cleared) ===== -->
+  <div class="love" id="love" hidden>
+    <div class="love-glow" aria-hidden="true"></div>
+    <div class="love-body">
+      <div class="love-heart" aria-hidden="true">❤️‍🔥</div>
+      <p class="love-message" id="love-message"></p>
+    </div>
+    <div class="love-foot">
+      <p class="love-stats" id="love-stats"></p>
+      <div class="love-actions">
+        <button class="btn btn--love" id="love-again">Play again</button>
+        <button class="btn btn--quiet" id="love-menu">Choose board</button>
+      </div>
+    </div>
+  </div>
+
   <div class="confetti" id="confetti" aria-hidden="true"></div>
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 </div>
+<script src="./js/love.js"></script>
 <script src="./app.js"></script>
 </body>
 </html>

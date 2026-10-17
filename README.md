@@ -28,8 +28,12 @@ always be solved**. If a board does get stuck, *Shuffle* re-deals the remaining
 tiles the same way; when the last tiles are stacked on each other (the one case
 no shuffle can fix) the game says so and offers Undo instead.
 
+Clearing a board opens a love screen: a burning heart, a message from the
+rotation in `js/love.js`, heart confetti, and the time and best time underneath.
+
 Also in: hints, unlimited undo, a pause screen, best times per board, sound you
-can mute, and an auto-saved game that survives closing the app.
+can mute, and an auto-saved game that survives closing the app — including across
+an update, where the app refreshes itself and drops straight back into the board.
 
 ## How it is built
 

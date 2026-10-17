@@ -80,6 +80,11 @@
     }
   ];
 
+  var HEARTS = ['❤️', '💕', '💖'];
+
+  /* js/love.js owns the love screen; the stub keeps the game playable if it is missing */
+  var Love = window.ZooLove || { show: function () {}, hide: function () {} };
+
   /* ---------- tiny utils ---------- */
   function $(s) { return document.querySelector(s); }
   function el(tag, cls, html) {
@@ -107,6 +112,16 @@
     try { localStorage.setItem(key, JSON.stringify(val)); } catch (e) { /* private mode */ }
   }
   function drop(key) { try { localStorage.removeItem(key); } catch (e) {} }
+
+  /* set just before an update reload, so the board comes straight back */
+  function flagResume() { try { sessionStorage.setItem('zoo.resume', '1'); } catch (e) {} }
+  function takeResumeFlag() {
+    try {
+      var v = sessionStorage.getItem('zoo.resume');
+      sessionStorage.removeItem('zoo.resume');
+      return v === '1';
+    } catch (e) { return false; }
+  }
 
   /* ---------- board model ---------- */
   function buildTiles(level) {
@@ -305,6 +320,7 @@
   function startGame(levelId) {
     var level = levelById(levelId);
     if (!level) return;
+    Love.hide();
     var tiles = buildTiles(level);
     var pairs = planPairs(tiles);
     if (!pairs) { toast('Could not deal that board, try again'); return; }
@@ -627,37 +643,24 @@
     stats[state.level] = st;
     store(STORE.stats, stats);
 
-    confetti();
-    var next = LEVELS[(LEVELS.indexOf(lv) + 1) % LEVELS.length];
+    confetti(HEARTS);
     setTimeout(function () {
-      openSheet(
-        '<span class="big-emoji">🎉</span>' +
-        '<h2>Zoo set free!</h2>' +
-        '<p>' + lv.name + ' cleared' + (isBest ? ' — a new best time!' : '') + '</p>' +
-        '<div class="result-grid">' +
-          '<div><b>' + fmtTime(secs) + '</b><span>time</span></div>' +
-          '<div><b>' + state.moves + '</b><span>moves</span></div>' +
-          '<div><b>' + fmtTime(st.best) + '</b><span>best</span></div>' +
-        '</div>' +
-        '<div class="actions">' +
-          '<button class="btn btn--primary" data-act="next">Play ' + next.name + '</button>' +
-          '<button class="btn btn--ghost" data-act="again">Play ' + lv.name + ' again</button>' +
-          '<button class="btn btn--ghost" data-act="menu">Back to menu</button>' +
-        '</div>',
-        function (s) {
-          s.querySelector('[data-act="next"]').onclick = function () { closeSheet(); startGame(next.id); };
-          s.querySelector('[data-act="again"]').onclick = function () { closeSheet(); startGame(lv.id); };
-          s.querySelector('[data-act="menu"]').onclick = function () { closeSheet(); toMenu(); };
-        }
-      );
-    }, 560);
+      if (!state || !state.won) return;        /* player already left the board */
+      Love.show({
+        time: fmtTime(secs),
+        best: fmtTime(st.best),
+        again: function () { startGame(lv.id); },
+        menu: function () { toMenu(); }
+      });
+    }, 380);
   }
 
-  function confetti() {
+  function confetti(palette) {
     var box = $('#confetti'), i, n, pick;
+    palette = palette || ANIMALS;
     box.innerHTML = '';
     for (i = 0; i < 26; i++) {
-      pick = ANIMALS[rnd(ANIMALS.length)];
+      pick = palette[rnd(palette.length)];
       n = el('i', '', pick);
       n.style.left = rnd(100) + 'vw';
       n.style.fontSize = (18 + rnd(20)) + 'px';
@@ -670,6 +673,7 @@
   }
 
   function toMenu() {
+    Love.hide();
     saveGame();
     clearInterval(timer);
     clearHint();
@@ -793,8 +797,23 @@
       findMatch: function (all) { return findMatch(all); },
       tap: function (t) { tapTile(t); },
       start: startGame,
-      levels: LEVELS
+      levels: LEVELS,
+      love: Love,
+      forceWin: function () {
+        if (!state || state.won) return false;
+        state.tiles.forEach(function (t) {
+          if (!t.removed) { t.removed = true; t.el.style.visibility = 'hidden'; }
+        });
+        select(null);
+        clearHint();
+        refresh();
+        win();
+        return true;
+      }
     };
+    var dev = el('button', 'dev-win', 'win');
+    dev.addEventListener('click', function () { window.__zoo.forceWin(); });
+    document.getElementById('app').appendChild(dev);
   }
 
   /* ---------- boot ---------- */
@@ -802,12 +821,49 @@
   renderHome();
   show('home');
 
+  /* came back from an update reload: drop straight back into the board */
+  if (takeResumeFlag()) {
+    var resumeSave = load(STORE.save, null);
+    if (resumeSave) restoreGame(resumeSave);
+  }
+
+  /* ---------- keep the installed app up to date by itself ---------- */
   if ('serviceWorker' in navigator && location.protocol !== 'file:' && location.search.indexOf('nosw') < 0) {
     window.addEventListener('load', function () {
       var hadController = !!navigator.serviceWorker.controller;
-      navigator.serviceWorker.register('./sw.js').catch(function () {});
+      var lastCheck = Date.now();
+
+      navigator.serviceWorker.register('./sw.js').then(function (reg) {
+        /* a worker that installed while the app was closed: let it take over now */
+        if (reg.waiting) reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+
+        reg.addEventListener('updatefound', function () {
+          var fresh = reg.installing;
+          if (!fresh) return;
+          fresh.addEventListener('statechange', function () {
+            if (fresh.state === 'installed' && navigator.serviceWorker.controller) {
+              fresh.postMessage({ type: 'SKIP_WAITING' });
+            }
+          });
+        });
+
+        /* look for a new version whenever the app comes back to the foreground */
+        document.addEventListener('visibilitychange', function () {
+          if (document.hidden || Date.now() - lastCheck < 5 * 60 * 1000) return;
+          lastCheck = Date.now();
+          reg.update().catch(function () {});
+        });
+      }).catch(function () {});
+
+      /* the new worker is in charge: save the game, then refresh once */
       navigator.serviceWorker.addEventListener('controllerchange', function () {
-        if (hadController && !window.__reloading) { window.__reloading = true; location.reload(); }
+        if (!hadController || window.__reloading) return;
+        window.__reloading = true;
+        if (state && !state.won) {              /* a board was open: bring it back */
+          saveGame();
+          if (load(STORE.save, null)) flagResume();
+        }
+        location.reload();
       });
     });
   }
